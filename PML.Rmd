@@ -24,21 +24,27 @@ The purpose of the project is to predict the manner in which they did the exerci
 
 -   Run the model over the 20 test cases and see what accuracy we get.
 
-## Analyzing the data
+```{r}
+options(warn=-1)
 
-In total we have 19622 observations in the dataset, with 164 potential predictor variables/columns. Given that there are so many potential predictor variables a random forest is a good coice for modelling on this dataset, since a RF can assist in feature selection by determining which predictors are significant and add predictive power to the model. However to proceed we need to preProcess the data for training.
+#download the data required for this assignment
+data = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv");
+cases = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv");
+```
 
-## Preprocessing the data
+## Analyze the data
+
+In total we have 19622 observations in the dataset, with 159 potential predictor variables. Given that there are so many potential predictor variables a random forest is a good coice for modelling on this dataset, since a RF can assist in feature reduction by determining which predictors are significant/important by way of contribution of predictive power to the model. To proceed with training we first need to preProcess the data before splitting.
+
+```{r}
+dim(data)
+```
+
+## Preprocess the data
 
 After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our caret train function, therefore we need to split cvtd_timestamp into year, month, day, hour, minute, and cast each new predictor columns to numeric.
 
 ```{r cars}
-options(warn=-1)
-
-#download the data required for the assignment
-data = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv");
-cases = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv");
-
 #install and load caret
 #install.packages("caret");
 library(caret);
@@ -50,10 +56,10 @@ data$hour <- as.numeric(substr(data$cvtd_timestamp, 12, 13));
 data$minute <- as.numeric(substr(data$cvtd_timestamp, 15, 16));
 
 #remove predictor variables that are redundant in our dataset
-data = data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", 
+data <- data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", 
 "raw_timestamp_part_2", "cvtd_timestamp"))];
 
-#cast predictors with incorrect datatypes. I'm unsure why this happens
+#cast predictors with incorrect datatypes. I'm unsure why this happens, but I want to keep as many predictor varaiables in scope as possible
 data$kurtosis_roll_belt       <- as.numeric(data$kurtosis_roll_belt);
 data$kurtosis_picth_belt      <- as.numeric(data$kurtosis_picth_belt);
 data$kurtosis_yaw_belt        <- as.numeric(data$kurtosis_yaw_belt);
@@ -61,7 +67,7 @@ data$skewness_roll_belt       <- as.numeric(data$skewness_roll_belt);
 data$skewness_roll_belt.1     <- as.numeric(data$skewness_roll_belt.1);
 data$skewness_yaw_belt        <- as.numeric(data$skewness_yaw_belt);
 data$max_yaw_belt             <- as.numeric(data$max_yaw_belt);
-data$min_yaw_belt1            <- as.numeric(data$min_yaw_belt);
+data$min_yaw_belt             <- as.numeric(data$min_yaw_belt);
 data$amplitude_yaw_belt       <- as.numeric(data$amplitude_yaw_belt);
 data$kurtosis_yaw_arm         <- as.numeric(data$kurtosis_yaw_arm);
 data$skewness_roll_arm        <- as.numeric(data$skewness_roll_arm);
@@ -78,20 +84,23 @@ data$min_yaw_dumbbell         <- as.numeric(data$min_yaw_dumbbell);
 data$amplitude_yaw_dumbbell   <- as.numeric(data$amplitude_yaw_dumbbell);
 data$kurtosis_roll_forearm    <- as.numeric(data$kurtosis_roll_forearm);
 data$kurtosis_picth_forearm   <- as.numeric(data$kurtosis_picth_forearm);
-data$kurtosis_yaw_torearm     <- as.numeric(data$kurtosis_yaw_forearm);
+data$kurtosis_yaw_forearm     <- as.numeric(data$kurtosis_yaw_forearm);
 data$skewness_roll_forearm    <- as.numeric(data$skewness_roll_forearm);
 data$skewness_pitch_forearm   <- as.numeric(data$skewness_pitch_forearm);
-data$skewnessyawforearm       <- as.numeric(data$skewness_yaw_forearm);
+data$skewness_yaw_forearm     <- as.numeric(data$skewness_yaw_forearm);
 data$max_yaw_forearm          <- as.numeric(data$max_yaw_forearm);
 data$min_yaw_forearm          <- as.numeric(data$min_yaw_forearm);
 data$amplitude_yaw_forearm    <- as.numeric(data$amplitude_yaw_forearm);
 data$kurtosis_roll_arm        <- as.numeric(data$kurtosis_roll_arm);
 data$kurtosis_picth_arm       <- as.numeric(data$kurtosis_picth_arm);
+
+#drop columns where all rows have missing data
+data <- data[,colSums(is.na(data))<nrow(data)]
 ```
 
-## Splitting the data
+## Split the data
 
-Next we split the data into testing and training subsets
+Next we split the data into testing and training subsets in the usual way.
 
 ```{r}
 inTrain <- createDataPartition(data$classe,
@@ -100,27 +109,26 @@ inTrain <- createDataPartition(data$classe,
 
 training <- data[inTrain,];
 testing <- data[-inTrain,];
-
-summary(training);
 ```
 
-It's apparent that there are quite a few missing values in some of the predictor variables so to help with model training we impute with a median.
+It's apparent that there are quite a few missing values (NA) in some of the predictor variables, however we don't want to simply throw them away as they may have predictive power, therefore we impute missing values with a median.
 
 ```{r}
 options(warn=-1)
-preObj <- preProcess(training[,-156], method="medianImpute");
+preObj <- preProcess(training[,which(colnames(data)=="classe")*-1], method="medianImpute");
 training.imputed <- predict(preObj, training);
 ```
 
-## Training the model
+Now our data should be ready to pass into the train function.
 
-Next we train our model using cross-validation, so the training set is split further into train/test subsets and the best model is selected, I've chosen to use a random forest for this classification problem, since it can handle co-linear, sparse, and non-normality in the predictor variables. Also, we can simplify the model later by analyzing the varibale importance (via varImp) post training and select a subset of significant predictors, which will also help us avoid overfitting.
+## Train the model
+
+Next we train our model using cross-validation, so the training set is split further into train/test subsets and the best model is selected. I've chosen to use a random forest for this classification problem, since it can handle co-linearity, sparsity, and non-normality in the predictor variables. Also, we can simplify the model later by analyzing the varibale importance) post-training (via varImp package) and select a subset of significant predictors, which will also help avoid overfitting.
 
 ```{r}
 control <- trainControl(method='repeatedcv',
                         number=5,
                         repeats=3);
-
 
 modFit <- train(classe ~ ., data=training.imputed, method="rf", trControl=control);
 modFit
@@ -148,6 +156,27 @@ modFit <- train(classe ~ ., data=training.optimized, method="rf", trControl=cont
 modFit
 ```
 
-We can conclude that there is no loss in model accuracy after retaining only the top 20 predictor variables in the model. The article which this project is based on retains 17 predictors in the model but it's ok to be a little more greedy here.
+We can conclude that there is no loss in model accuracy after retaining only the top 20 predictor variables in the model. The article which this project is based on retains 17 predictors in the model suggesting we could prune the number of features further, however for this exercise this will suffice.
 
-## Testing the model
+## Test the model
+
+Next we test the model on unseen data (testing dataset) to evaluate the model performance.
+
+```{r}
+#truncate the predictor variables that we don't need (insignificant) from our testing dataset
+#then test for accuracy on the testing subset
+testing.optimized <- testing[, (colnames(testing) %in% lst)];
+combPred <- predict(modFit, testing.optimized);
+confusionMatrix(as.factor(testing.optimized$classe), combPred);
+```
+
+The results are
+
+Finally we test on the 20 cases provided to us for this assignment
+
+```{r}
+#predict the result of the 20 test cases
+cases.optimized <- cases[, (colnames(cases) %in% c(lst, "problem_id"))];
+results <- data.frame(problem_id = cases.optimized, prediction = predict(modFit,cases.optimized));
+results;
+```
