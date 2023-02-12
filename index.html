@@ -27,10 +27,10 @@
     <p>All R studio code can be found <a target="_blank" href="https://github.com/dmac088/pml_project/blob/main/PML_Assignment.R">here</a></p>
 
     <h2>Analyzing the data</h2>
-    <p>In total we have 19622 observations in the dataset, with 165 variables/columns</p>
+    <p>In total we have 19622 observations in the dataset, with 164 potential predictor variables/columns</p>
     
     <h2>Preprocessing the data</h2>
-    <p>After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our machine learning train function, therefore w eneed to split the data into year, month, day, hour, minute.</p>
+    <p>After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our machine learning train function, therefore we need to split cvtd_timestamp into year, month, day, hour, minute, and cast each new predictor column to numeric</p>
     <pre>
       <code>
 data$year <- as.numeric(substr(data$cvtd_timestamp, 7, 11)); 
@@ -44,7 +44,7 @@ data$minute <- as.numeric(substr(data$cvtd_timestamp, 15, 16));
     <pre>
       <code>
 data = data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", 
-"raw_timestamp_part_2", "evtd_timestamp"))];
+"raw_timestamp_part_2", "cvtd_timestamp"))];
       </code>
     </pre>
     
