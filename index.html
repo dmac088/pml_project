@@ -127,7 +127,33 @@ plot(rfImp, top=50);
     
 <p>A decision is made to keep only th top 20 predictors in the model and see what loss in accuracy results.</p>
 
+       <pre>
+      <code> 
+Random Forest 
+
+14718 samples
+   14 predictor
+    5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+No pre-processing
+Resampling: Cross-Validated (5 fold, repeated 3 times) 
+Summary of sample sizes: 11776, 11775, 11773, 11774, 11774, 11775, ... 
+Resampling results across tuning parameters:
+
+  mtry  Accuracy   Kappa    
+   2    0.9972368  0.9965047
+   8    0.9978710  0.9973070
+  14    0.9968970  0.9960748
+
+Accuracy was used to select the optimal model using the largest value.
+The final value used for the model was mtry = 8.
+         </code>
+    </pre>
+  <p>We can conclude that there is no loss in model accuracy after retaining only the top 20 predictor variables in the model.</p>
+
     <h2>Testing the model</h2>
+    <p></p>
+    
     
     <h2>Final Result</h2>
   

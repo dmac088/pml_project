@@ -12,7 +12,7 @@ data$hour <- as.numeric(substr(data$cvtd_timestamp, 12, 13));
 data$minute <- as.numeric(substr(data$cvtd_timestamp, 15, 16));
 
 #remove raw timestamp and index columns from the data
-data = data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", "raw_timestamp_part_2", "evtd_timestamp"))];
+data = data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp"))];
 
 data$kurtosis_roll_belt       <- as.numeric(data$kurtosis_roll_belt);
 data$kurtosis_picth_belt      <- as.numeric(data$kurtosis_picth_belt);
@@ -82,7 +82,9 @@ training.optimized <- training.imputed[, (colnames(training.imputed) %in% lst)];
 modFit <- train(classe ~ ., data=training.optimized, method="rf", trControl=control);
 modFit
 
-
-
+#truncate the predictor variables that we don't need (insignificant) from our testing dataset
+testing.optimized <- testing[, (colnames(testing) %in% lst)];
+combPred <- predict(modFit, testing.optimized);
+confusionMatrix(as.factor(testing.optimized$classe), combPred);
 
 
