@@ -52,3 +52,11 @@ img {
   display: block;
   margin: 0 auto;
 }
+
+pre code {
+  font-size: 14px;
+  background-color: #eee;
+  border: 1px solid #999;
+  display: block;
+  padding: 20px;
+}

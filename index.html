@@ -17,21 +17,82 @@
 
     <ul> <!-- changed to list in the tutorial -->
       <li>Analyze the data and make a judgement call on the preparedness of the dataset.</li>
-      <li>Preprocess the data for model training</li>
+      <li>Preprocess the data for model training by casting datatypes appropriately, impute missing values</li>
       <li>Separate the dataset into testing and training subsets.</li>
-      <li>Train a model on the training dataset.</li>
+      <li>Train a model on the training dataset using cross validation.</li>
       <li>Test the model on the testing dataset and check the out of sample error.</li>
       <li>Run the model over the 20 test cases and see what accuracy we get.</li>
     </ul>
+    
+    <p>All R studio code can be found <a target="_blank" href="https://github.com/dmac088/pml_project/blob/main/PML_Assignment.R">here</a></p>
 
     <h2>Analyzing the data</h2>
+    <p>In total we have 19622 observations in the dataset, with 165 variables/columns</p>
     
     <h2>Preprocessing the data</h2>
+    <p>After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our machine learning train function, therefore w eneed to split the data into year, month, day, hour, minute.</p>
+    <pre>
+      <code>
+data$year <- as.numeric(substr(data$cvtd_timestamp, 7, 11)); 
+data$month <- as.numeric(substr(data$cvtd_timestamp, 4, 5)); 
+data$day <- as.numeric(substr(data$cvtd_timestamp, 1, 2)); 
+data$hour <- as.numeric(substr(data$cvtd_timestamp, 12, 13)); 
+data$minute <- as.numeric(substr(data$cvtd_timestamp, 15, 16));
+      </code>
+    </pre>
+    <p>Next we remove columns that are redundant or not required in the dataset.</p>
+    <pre>
+      <code>
+data = data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", 
+"raw_timestamp_part_2", "evtd_timestamp"))];
+      </code>
+    </pre>
+    
+<p>Lastly we cast all columns that are numeric to the "numeric type"</p>
+    <pre>
+      <code>
+data$kurtosis_roll_belt       <- as.numeric(data$kurtosis_roll_belt);
+data$kurtosis_picth_belt      <- as.numeric(data$kurtosis_picth_belt);
+data$kurtosis_yaw_belt        <- as.numeric(data$kurtosis_yaw_belt);
+data$skewness_roll_belt       <- as.numeric(data$skewness_roll_belt);
+.......and so on
+      </code>
+    </pre>
     
     <h2>Splitting the data</h2>
+    <p>Next we split the data into testing and training subsets</p>
+     <pre>
+      <code>
+inTrain <- createDataPartition(data$classe,
+                               p=3/4,
+                               list = FALSE);
+
+training <- data[inTrain,];
+testing <- data[-inTrain,];
+      </code>
+    </pre>   
+    <p>It's apparent that there are quite a few missing values in some of the predictor variables so to help with model training we impute with a median.</p>
+    <pre>
+      <code>
+preObj <- preProcess(training[,-156], method="medianImpute");
+training.imputed <- predict(preObj, training);
+        </code>
+    </pre>
     
     <h2>Training the model</h2>
-    
+    <p>Next we train our model using cross-validation, so the training set is split further into train/test subsets and the best model is selected, I've chosen to use a random forest for this classification problem, since it can handle co-linear, sparse, and non-normality in the predictor variables. Also we can simplify the model later by analyzing the varibale importance (via varImp) post training and select a subset of significant predictors, which will also help us avoid overfitting.</p>
+
+    <pre>
+      <code>
+control <- trainControl(method='repeatedcv',
+                        number=5,
+                        repeats=3);
+
+
+modFit <- train(classe ~ ., data=training.imputed, method="rf", trControl=control);
+modFit
+        </code>
+    </pre>
     <h2>Testing the model</h2>
     
     <h2>Final Result</h2>
