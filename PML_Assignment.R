@@ -59,6 +59,7 @@ testing <- data[-inTrain,];
 preObj <- preProcess(training[,-156], method="medianImpute");
 training.imputed <- predict(preObj, training);
 
+#set our training control to leverage cross-validation, 5 folds
 control <- trainControl(method='repeatedcv',
                         number=5,
                         repeats=3);
@@ -72,11 +73,12 @@ rfImp <- varImp(modFit, scale=TRUE);
 p = plot(rfImp, top=50);
 p;
 
-#keep only the top 20 predictor variables in the model
+#keep only the top 20 predictor variables in the model, this will help prevent over fitting
+p = plot(rfImp, top=20);
 lst = c(p$y.limits, "classe");
 training.optimized <- training.imputed[, (colnames(training.imputed) %in% lst)];
 
-#retrain the model with only the top 20 predictors from our previous run
+#re-train the model with only the top 20 predictors from our previous run
 modFit <- train(classe ~ ., data=training.optimized, method="rf", trControl=control);
 modFit
 
