@@ -93,6 +93,42 @@ modFit <- train(classe ~ ., data=training.imputed, method="rf", trControl=contro
 modFit
         </code>
     </pre>
+    <pre>
+      <code>  
+Random Forest 
+
+14718 samples
+  164 predictor
+    5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+No pre-processing
+Resampling: Cross-Validated (5 fold, repeated 3 times) 
+Summary of sample sizes: 11775, 11774, 11774, 11776, 11773, 11773, ... 
+Resampling results across tuning parameters:
+
+  mtry  Accuracy   Kappa    
+    2   0.5998595  0.4659081
+  123   0.9972141  0.9964760
+  245   0.9957420  0.9946136
+
+Accuracy was used to select the optimal model using the largest value.
+The final value used for the model was mtry = 123.
+       </code>
+    </pre>
+    <p>The accuracy of the model is extremely high at 0.9972 with a "mtry" value = 123 and all predictor variables in scope, however it's extremely unlikely that all predictor variables are significant and leaving them all in the model scope may lead to overfitting, therefore we should take a look at predictor variable importance using varImp.</p>
+        <pre>
+      <code>  
+rfImp <- varImp(modFit, scale=TRUE);
+plot(rfImp, top=50);
+
+<img src="images/varImp.png"/>
+           </code>
+    </pre>
+    
+<p>I made a decision to keep only th top 20 predictors in the model and see what loss in accuracy results.</p>
+
+
+
     <h2>Testing the model</h2>
     
     <h2>Final Result</h2>
