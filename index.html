@@ -80,7 +80,7 @@ training.imputed <- predict(preObj, training);
     </pre>
     
     <h2>Training the model</h2>
-    <p>Next we train our model using cross-validation, so the training set is split further into train/test subsets and the best model is selected, I've chosen to use a random forest for this classification problem, since it can handle co-linear, sparse, and non-normality in the predictor variables. Also we can simplify the model later by analyzing the varibale importance (via varImp) post training and select a subset of significant predictors, which will also help us avoid overfitting.</p>
+    <p>Next we train our model using cross-validation, so the training set is split further into train/test subsets and the best model is selected, I've chosen to use a random forest for this classification problem, since it can elegantly handle co-linearity, sparsity, and non-normality in the predictor variables. Also we can simplify the model later by analyzing the varibale importance (via varImp) post training and select a subset of significant predictors, which will also help us avoid overfitting.</p>
 
     <pre>
       <code>
