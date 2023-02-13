@@ -18,7 +18,7 @@ The purpose of the project is to predict the manner in which they did the exerci
 
 -   Separate the dataset into testing and training subsets.
 
--   Train a model on the training dataset using cross validation.
+-   Train the model on the training dataset using cross validation.
 
 -   Test the model on the testing dataset and check the out of sample error.
 
@@ -32,6 +32,8 @@ data = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-trainin
 cases = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv");
 ```
 
+------------------------------------------------------------------------
+
 ## Analyze the data
 
 In total we have 19622 observations in the dataset, with 159 potential predictor variables. Given that there are so many potential predictor variables a random forest is a good coice for modelling on this dataset, since a RF can assist in feature reduction by determining which predictors are significant/important by way of contribution of predictive power to the model. To proceed with training we first need to preProcess the data before splitting.
@@ -40,9 +42,11 @@ In total we have 19622 observations in the dataset, with 159 potential predictor
 dim(data)
 ```
 
+------------------------------------------------------------------------
+
 ## Preprocess the data
 
-After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our caret train function, therefore we need to split cvtd_timestamp into year, month, day, hour, minute, and cast each new predictor columns to numeric.
+After analyzing that data it's apparent that there are timestamp variables that cannot be consumed by our caret train function, therefore we need to split cvtd_timestamp into year, month, day, hour, minute, and cast each new predictor columns to the numeric type.
 
 ```{r cars}
 #install and load caret
@@ -98,6 +102,8 @@ data$kurtosis_picth_arm       <- as.numeric(data$kurtosis_picth_arm);
 data <- data[,colSums(is.na(data))<nrow(data)]
 ```
 
+------------------------------------------------------------------------
+
 ## Split the data
 
 Next we split the data into testing and training subsets in the usual way.
@@ -111,7 +117,7 @@ training <- data[inTrain,];
 testing <- data[-inTrain,];
 ```
 
-It's apparent that there are quite a few missing values (NA) in some of the predictor variables, however we don't want to simply throw them away as they may have predictive power, therefore we impute missing values with a median.
+It's apparent that there are quite a few missing values "NA" in some of the predictor variables, however we don't want to simply throw them away as they may have predictive power, therefore we impute missing values with a median.
 
 ```{r}
 options(warn=-1)
@@ -119,7 +125,7 @@ preObj <- preProcess(training[,which(colnames(data)=="classe")*-1], method="medi
 training.imputed <- predict(preObj, training);
 ```
 
-Now our data should be ready to pass into the train function.
+------------------------------------------------------------------------
 
 ## Train the model
 
@@ -134,12 +140,12 @@ modFit <- train(classe ~ ., data=training.imputed, method="rf", trControl=contro
 modFit
 ```
 
-The accuracy of the model is extremely high at 0.9972 with a "mtry" value = 123 and all predictor variables in scope, however it's extremely unlikely that all predictor variables are significant and leaving them all in the model scope may lead to over-fitting, therefore we should take a look at predictor variable importance using varImp.
+The accuracy of the model is extremely high at 0.9976 with a "mtry" value = 80 and all predictor variables in scope, however it's extremely unlikely that all predictor variables are significant and leaving them all in the model scope may lead to over-fitting, therefore we should take a look at predictor variable importance using varImp.
 
 ```{r}
 #check the variable importance on the training set
 rfImp <- varImp(modFit, scale=TRUE);
-p = plot(rfImp, top=50);
+p = plot(rfImp, top=20);
 p;
 ```
 
@@ -156,27 +162,42 @@ modFit <- train(classe ~ ., data=training.optimized, method="rf", trControl=cont
 modFit
 ```
 
-We can conclude that there is no loss in model accuracy after retaining only the top 20 predictor variables in the model. The article which this project is based on retains 17 predictors in the model suggesting we could prune the number of features further, however for this exercise this will suffice.
-
-## Test the model
-
-Next we test the model on unseen data (testing dataset) to evaluate the model performance.
+We can conclude that there is minimal loss in model accuracy after retaining only the top 20 predictor variables. The article which this project is based on retains 17 predictors in the model suggesting we could prune the number of predictors further, however for this exercise this will suffice. Lets see what the accuracy of the fitted model is on the training set with a confusion matrix.
 
 ```{r}
 #truncate the predictor variables that we don't need (insignificant) from our testing dataset
-#then test for accuracy on the testing subset
+#then test for accuracy
+combPred <- predict(modFit, training.optimized);
+confusionMatrix(as.factor(training.optimized$classe), combPred);
+```
+
+The accuracy on the training set is 1, indicating that the model is perfectly accurate on the training set.
+
+------------------------------------------------------------------------
+
+## Test the model
+
+Next we test the model on unseen data (testing dataset) to evaluate the model performance. The accuracy should be very close to 1. I expect the "out of sample" error to be higher than the "in sample" error, so let's check out the confusion matrix.
+
+```{r}
+#truncate the predictor variables that we don't need (insignificant) from our testing dataset
+#then test for accuracy
 testing.optimized <- testing[, (colnames(testing) %in% lst)];
 combPred <- predict(modFit, testing.optimized);
 confusionMatrix(as.factor(testing.optimized$classe), combPred);
 ```
 
-The results are
-
-Finally we test on the 20 cases provided to us for this assignment
+The accuracy on the testing/evaluation dataset is 0.999, which is extremely high, this model should be good enough for us to pass the final test on the 20 cases.
 
 ```{r}
+#create a minute column
+cases$minute <- as.numeric(substr(cases$cvtd_timestamp, 15, 16));
 #predict the result of the 20 test cases
 cases.optimized <- cases[, (colnames(cases) %in% c(lst, "problem_id"))];
-results <- data.frame(problem_id = cases.optimized, prediction = predict(modFit,cases.optimized));
+results <- data.frame(problem_id = cases.optimized$problem_id, prediction = predict(modFit,cases.optimized));
 results;
 ```
+
+The model resulted in a perfect score of 20/20 for the cases, however I'm not convinced "num_window" should be included in the model, however the assignment brief allow us to leverage it for the purpose of this assignment.
+
+------------------------------------------------------------------------
