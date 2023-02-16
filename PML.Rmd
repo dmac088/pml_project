@@ -29,9 +29,6 @@ The purpose of the project is to predict the manner in "which they did the exerc
 ```{r}
 options(warn=-1)
 set.seed(123456);
-#download the data required for this assignment
-data = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv");
-
 ```
 
 ------------------------------------------------------------------------
@@ -71,6 +68,9 @@ For the remaining perdictors that define *"how"* the exercise was performed, we 
 ```{r, warning = FALSE}
 library(caret);
 
+#download the data required for this assignment
+data = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv");
+
 #remove candidate predictors
 data <- data[, !(colnames(data) %in% c("X", "raw_timestamp_part_1", 
 "raw_timestamp_part_2", "cvtd_timestamp", "user_name", "num_window", "new_window","total_accel_forearm"))];
@@ -87,14 +87,14 @@ data$classe <- as.factor(data$classe)
 data <- data[,colSums(is.na(data))<nrow(data)];
 
 #impute missing values with a median
-preObj <- preProcess(training[,which(colnames(data)=="classe")*-1], method="medianImpute");
-training.imputed <- predict(preObj, training);
+preObj <- preProcess(data[,which(colnames(data)=="classe")*-1], method="medianImpute");
+data <- predict(preObj, data);
 
 #check out dimensionality
 dim(data);
 ```
 
-We now have just 52 candidate predictors, so the cleanup was definitely worthwhile.
+We now have just 51 candidate predictors, so the cleanup was definitely worthwhile.
 
 ------------------------------------------------------------------------
 
@@ -115,18 +115,18 @@ testing <- data[-inTrain,];
 
 ## Feature reduction and selection
 
-Train a Lasso model using all the predictors available in the data-set. Lasso is a nice way to automate feature selection. We use k-fold cross-validation with k=5 to reduce training set bias (prevent overfitting). With k=5 20% of the training data is held out for testing for each iteration.
+Train a Lasso model using all the predictors available in the data-set. Lasso is a nice way to automate feature selection. We use k-fold cross-validation with k=5 to reduce training set bias (prevent overfitting). With k=5 20% of the training data is held out for testing in each iteration.
 
 ```{r, warning = FALSE}
 library(glmnet);
 control <- trainControl(method='repeatedcv',
                         number=5,
                         repeats=3);
-modFit <- train(classe ~ ., data=training.imputed, method="glmnet", family="multinomial", type.multinomial = "grouped", trControl=control, standardize = TRUE);
+modFit <- train(classe ~ ., data=training, method="glmnet", family="multinomial", type.multinomial = "grouped", trControl=control, standardize = TRUE);
 modFit;
 ```
 
-Check the predictor imoprtance using plotmo, which will show us the predictors retained in the model for each increase in lambda. Each predictor will have different effects on the outcome "classe", therefore we take a look at the plot for each outcome independently, however notice that there is some commonality between them.
+Check the predictor importance using plotmo, which will show us the predictors retained in the model for each increase in lambda. Each predictor will have different effects on the outcome "classe", therefore we take a look at the plot for each outcome independently, however notice that there is some commonality between them.
 
 ```{r, warning = FALSE}
 library(plotmo);
@@ -141,7 +141,7 @@ Next, we check the predictor importance across all outcomes using varImp, and en
 
 ```{r, warning = FALSE}
 library(caret)
-lassoImp <- varImp(modFit, lambda=0.0003557014);
+lassoImp <- varImp(modFit, lambda=0.0003572849);
 lassoImp
 ```
 
@@ -153,61 +153,61 @@ plot(lassoImp, top = 20)
 
 ------------------------------------------------------------------------
 
-## Train a random forest model 
+## Train a random forest model
 
-Next, we train a random forest model using cross-validation and carry over the 20 important predictors identified by the Lasso in previous step. A random forest is chosen for this classification problem, since it can elegently handle co-linearity, sparsity, and non-normality in the predictor variables.
+Next, we train a random forest model using cross-validation and carry over the 20 important predictors identified by the Lasso in previous step. A random forest is chosen for this classification problem, since it can elegantly handle co-linearity, sparsity, and non-normality in the predictor variables.
 
 ```{r, warning = FALSE}
 #keep only the top 20 predictor variables in the model, this will help prevent over-fitting
 p = plot(lassoImp, top=20);
 lst = c(p$y.limits, "classe");
-training.optimized <- training.imputed[, (colnames(training.imputed) %in% lst)];
+training.optimized <- training[, (colnames(training) %in% lst)];
 
 #Train the model
 rfFit <- train(classe ~ ., data=training.optimized, method="rf", trControl=control);
 rfFit
 ```
 
-Caret found an optimal tree model at mtry=2, which has an accuracy of 0.9735021. However we should be cautious about the high accuracy and test the model on unseen data to evaluate the true performance.
+Caret found an optimal tree model at mtry=2 with accuracy of 0.98. However we should be cautious about the high accuracy and test the model on unseen data to evaluate the true performance.
 
 ------------------------------------------------------------------------
 
 ## Test the model
 
-Next we test the model on unseen data (testing/evaluation data-set) to evaluate the model performance. The accuracy should be very close to 0.97 since we used k=5 cross-validation to reduce over-fitting. I expect the "out of sample" error to be higher than the "in sample" error, so let's check out the confusion matrix.
-
-```{r}
+```{r, warning = FALSE}
 #test for accuracy
-preObj <- preProcess(testing[,which(colnames(data)=="classe")*-1], method="medianImpute");
-testing.imputed <- predict(preObj, testing);
-testing.optimized <- testing.imputed[, (colnames(testing.imputed) %in% lst)];
-combPred <- predict(rfFit, testing.optimized);
-confusionMatrix(as.factor(testing.optimized$classe), combPred);
+training.optimized <- training[, (colnames(training) %in% lst)];
+rfPred <- predict(rfFit, training.optimized);
+confusionMatrix(as.factor(training.optimized$classe), rfPred);
 ```
 
-The accuracy on the testing/evaluation data-set is 0.9598, which is extremely high, this model should be good enough for us to pass the final test on the 20 cases.
+Next we test the model on unseen data (testing/evaluation data-set) to evaluate the model performance. The accuracy should be very close our training set since we used k=5 cross-validation to reduce over-fitting. I expect the "out of sample" error to be higher than the "in sample" error, so let's check out the confusion matrix.
+
+```{r, warning = FALSE}
+#test for accuracy
+testing.optimized <- testing[, (colnames(testing) %in% lst)];
+rfPred <- predict(rfFit, newdata=testing.optimized);
+confusionMatrix(as.factor(testing.optimized$classe), rfPred);
+```
+
+The accuracy on the testing/evaluation data-set is 0.9849, which is extremely high, this model should be good enough for us to pass the final test on the 20 cases.
 
 ```{r}
 #predict the result of the 20 test cases
 cases = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv");
 
 cases.optimized <- cases[, (colnames(cases) %in% c(lst, "problem_id"))];
-
-#cast predictors
-#cases.optimized <- data.frame(sapply(cases.optimized[,!(colnames(cases.optimized) %in% c("problem_id"))], as.numeric), problem_id=cases.optimized$problem_id);
-
 sapply(cases.optimized[,!(colnames(cases.optimized) %in% c("problem_id"))], as.numeric);
 
-str(cases.optimized)
+#impute any missing values
+cases.optimized <- predict(preObj, cases.optimized);
 
-#results <- data.frame(problem_id = cases.optimized$problem_id, 
-                    #  prediction = predict(rfFit, cases.optimized)
-#);
-#prediction;
-
-#predict(rfFit, cases.optimized)
+results <- data.frame(problem_id = cases.optimized$problem_id, 
+                      prediction = predict(rfFit, cases.optimized)
+);
+results;
 ```
 
-The model resulted in a perfect score of 20/20 for the cases, however I'm not convinced "num_window" should be included in the model, however the assignment brief allow us to leverage it for the purpose of this assignment.
+The model resulted in a perfect score of 20/20 for the cases.
 
 ------------------------------------------------------------------------
