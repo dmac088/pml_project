@@ -352,7 +352,8 @@ display: none;
 <h1 class="title toc-ignore">Practical Machine Learning - Coursera
 Assignment</h1>
 <h4 class="date">2023-02-12</h4>
-
+<h5>full repository url: https://github.com/dmac088/pml_project<h5>
+<p>the full url contains the .Rmd and html files</p>
 </div>
 
 
@@ -673,8 +674,8 @@ confusionMatrix(as.factor(testing.optimized$classe), rfPred);</code></pre>
 ## Detection Rate         0.2832   0.1868   0.1717   0.1605   0.1821
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
 ## Balanced Accuracy      0.9889   0.9921   0.9829   0.9904   0.9979</code></pre>
-<p>The accuracy on the testing/evaluation data-set is 0.9849, which is
-highly accurate, although not quite as accurate as what’s achieved in
+<p>The accuracy on the testing/evaluation data-set is 0.9849, with an out of sample error of (1 - 0.9849), which is approximately 0.0151, which 
+highly accurate. Although not quite as accurate as what’s achieved in
 the literature This model should be good enough for us to pass the final
 test on the 20 cases.</p>
 <pre class="r"><code>#predict the result of the 20 test cases
