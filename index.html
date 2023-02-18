@@ -560,8 +560,7 @@ if there are non-linear relationships with “classe”.</p>
 <p>Next, we train a random forest model using cross-validation and carry
 over the 20 important predictors identified by the Lasso in previous
 step. A random forest is chosen for this classification problem, since
-it can elegantly handle co-linearity, sparsity, and non-normality in the
-predictor variables.</p>
+it can elegantly handle non-linearity.</p>
 <pre class="r"><code>#keep only the top 20 predictor variables in the model, this will help prevent over-fitting
 p = plot(lassoImp, top=20);
 lst = c(p$y.limits, &quot;classe&quot;);
