@@ -680,8 +680,8 @@ confusionMatrix(as.factor(testing.optimized$classe), rfPred);</code></pre>
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1639   0.1837
 ## Balanced Accuracy      0.9889   0.9921   0.9829   0.9904   0.9979</code></pre>
 <p>The accuracy on the testing/evaluation data-set is 0.9849, with an out of sample error of (1 - 0.9849), which is approximately 0.0151, which 
-is higher than our expected accuracy. Althoughthis model is not quite as accurate as what’s achieved in
-the literature This model should be good enough for us to pass the final
+is higher than our expected accuracy. Although this model is not quite as accurate as what’s achieved in
+the literature it seems accurate enough for us to pass the final
 test on the 20 cases.</p>
 <pre class="r"><code>#predict the result of the 20 test cases
 cases = read.csv(&quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv&quot;);
